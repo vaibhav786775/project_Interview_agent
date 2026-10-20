@@ -1,65 +1,101 @@
 import React from 'react'
-import { motion } from "motion/react";
-import { FiCheckCircle, FiClock, FiMap, FiTarget, FiX } from 'react-icons/fi';
-import ModuleCard from './ModuleCard';
-function RoadmapResult({roadmap, onClear}) {
+import { motion } from 'motion/react'
+import { FiCheckCircle, FiClock, FiMap, FiTarget, FiX } from 'react-icons/fi'
+import ModuleCard from './ModuleCard'
+import { Badge } from '../ui/Badge'
+
+export function RoadmapResult({ roadmap, onClear }) {
+  if (!roadmap) return null
+
   return (
-    <motion.div 
-    initial={{ opacity: 0 }}
+    <motion.div
+      initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}>
-
-        <motion.div
-        initial={{ opacity: 0, y: 10 }}
+      transition={{ duration: 0.3 }}
+      className="space-y-6"
+    >
+      {/* Roadmap Overview Meta Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-         className='relative overflow-hidden bg-[#000000]/90 backdrop-blur-2xl border border-white/10 rounded-2xl p-5 mb-5 shadow-[0_8px_32px_rgba(0,0,0,0.22)]'>
-            <div className='absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none'/>
+        className="relative overflow-hidden bg-[#0B1220]/90 backdrop-blur-2xl border border-white/10 rounded-3xl p-6 sm:p-7 shadow-xl"
+      >
+        <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cyan-400/40 to-transparent pointer-events-none" />
 
-            <div className='relative flex items-start justify-between mb-4'>
+        <div className="relative flex items-start justify-between mb-5">
+          <div>
+            <Badge variant="cyan" size="sm" dot className="mb-2">
+              ACTIVE TRAJECTORY
+            </Badge>
+            <h2 className="font-heading text-2xl font-bold text-white tracking-tight">
+              {roadmap.title}
+            </h2>
+            <p className="text-xs sm:text-sm text-slate-400 mt-1 font-mono">
+              Compensation Benchmark:{' '}
+              <span className="text-cyan-300 font-bold">{roadmap.targetPackage}</span>
+            </p>
+          </div>
 
-                <div>
-                    <p className='text-xs text-white/35 tracking-widest uppercase mb-1'>Your Roadmap</p>
-                    <h2 className='text-xl font-bold text-white'>{roadmap.title}</h2>
-                    <p className='text-sm text-white/45 mt-0.5'>
-                    Target: <span className="text-violet-400 font-medium">{roadmap.targetPackage}</span>
-                    </p>
-                </div>
-                <button onClick={onClear} className='text-white/30 hover:text-white/70 transition-colors mt-0.5'>
-                <FiX size={16}/></button>
-            </div>
+          <button
+            onClick={onClear}
+            className="w-8 h-8 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+            title="Close view"
+            aria-label="Close view"
+          >
+            <FiX size={16} />
+          </button>
+        </div>
 
-            <div className='relative grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3'>
-                {[
-            { icon: FiTarget,      label: "Difficulty", value: roadmap.level },
-            { icon: FiClock,       label: "Duration",   value: roadmap.duration },
-            { icon: FiCheckCircle, label: "Modules",    value: `${roadmap.modules.length} topics` },
-          ].map(({icon:Icon , label , value})=>(
-            <div key={label} className='rounded-xl p-3 bg-white/5 border border-white/8'>
-                <div className='flex items-center gap-1.5 mb-1'>
-                    <Icon size={11} className="text-white/30"/>
-                    <span className='text-xs text-white/30'>{label}</span>
-                    </div>
-                    <p className='text-sm font-semibold text-white'>{value}</p>
-
+        {/* 3 Telemetry Stats */}
+        <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {[
+            { icon: FiTarget, label: 'Difficulty Tier', value: roadmap.level },
+            { icon: FiClock, label: 'Estimated Timeline', value: roadmap.duration },
+            {
+              icon: FiCheckCircle,
+              label: 'Curriculum Nodes',
+              value: `${roadmap.modules?.length || 0} Modules`,
+            },
+          ].map(({ icon: Icon, label, value }) => (
+            <div
+              key={label}
+              className="rounded-2xl p-3.5 bg-[#070B14] border border-white/[0.08] flex items-center gap-3"
+            >
+              <div className="w-8 h-8 rounded-lg bg-cyan-500/10 border border-cyan-400/25 flex items-center justify-center text-cyan-300 shrink-0">
+                <Icon size={15} />
+              </div>
+              <div>
+                <span className="font-mono text-[10px] text-slate-400 uppercase tracking-wider block">
+                  {label}
+                </span>
+                <span className="font-mono text-sm font-bold text-white">{value}</span>
+              </div>
             </div>
           ))}
-            </div>
-
-        </motion.div>
-
-        <div className='mb-4'>
-            <p className='text-xs text-black/40 font-semibold uppercase tracking-widest mb-3 flex items-center gap-2'>
-            <FiMap size={12}/> Learning Modules </p>
-            <div className='flex flex-col gap-2'>
-                {
-                    roadmap.modules.map((m,i)=>(
-                        <ModuleCard key={m.title} mod={m} index={i}/>
-                    ))
-                }
-            </div>
         </div>
-      
+      </motion.div>
+
+      {/* Curriculum Module Sequence */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <FiMap className="text-cyan-400" size={15} />
+            <h3 className="font-heading text-base font-bold text-white tracking-tight">
+              Sequenced Curriculum Modules
+            </h3>
+          </div>
+          <span className="font-mono text-xs text-slate-400">
+            {roadmap.modules?.length || 0} Total Units
+          </span>
+        </div>
+
+        <div className="space-y-3">
+          {roadmap.modules?.map((m, i) => (
+            <ModuleCard key={m.title || i} mod={m} index={i} />
+          ))}
+        </div>
+      </div>
     </motion.div>
   )
 }

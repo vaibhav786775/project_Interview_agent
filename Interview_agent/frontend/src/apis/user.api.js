@@ -21,3 +21,5 @@ export const useCoins = async (data)=>{
         throw error;
     }
 }
+
+export const deductCoins = useCoins

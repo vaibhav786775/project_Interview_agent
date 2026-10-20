@@ -5,7 +5,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { getInterview } from '../apis/interview.api'
 import Step2interview from '../components/interview/Step2interview'
 
-function InterviewPage({user , setUser}) {
+function InterviewPage({ user }) {
     const {id} = useParams()
     const [loading , setLoading] = useState(true)
     const [interview,setInterview] = useState(null)
@@ -30,9 +30,10 @@ function InterviewPage({user , setUser}) {
 
     if(loading){
         return(
-            <div className="min-h-screen bg-[#07000F] flex items-center justify-center">
-        <div className="w-12 h-12 rounded-full border-4 border-white/20 border-t-white animate-spin" />
-      </div>
+            <div className="min-h-screen bg-[#070B14] flex flex-col items-center justify-center gap-3">
+              <div className="w-12 h-12 rounded-full border-2 border-cyan-500/20 border-t-cyan-400 animate-spin shadow-[0_0_20px_rgba(103,232,249,0.3)]" />
+              <span className="font-mono text-xs text-slate-400">Calibrating Simulation Room...</span>
+            </div>
         )
     }
     if(!interview) return null

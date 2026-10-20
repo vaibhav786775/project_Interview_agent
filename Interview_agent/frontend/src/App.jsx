@@ -1,10 +1,7 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Routes , Route, Navigate } from 'react-router-dom'
 import Home from './pages/Home'
 import Dashboard from './pages/Dashboard'
-import { use } from 'react'
-import { useState } from 'react'
-import { useEffect } from 'react'
 import { getCurrentUser } from './apis/user.api'
 import Scorer from './pages/Scorer'
 import { getResume } from './apis/resume.api'
@@ -50,7 +47,7 @@ function App() {
   if(loading){
     return(
       <div className="fixed top-0 left-0 w-full z-[9999]">
-        <div className="h-1 bg-black animate-pulse w-full" />
+        <div className="h-1 bg-gradient-to-r from-cyan-400 via-violet-400 to-cyan-400 animate-pulse w-full shadow-[0_0_12px_rgba(103,232,249,0.8)]" />
       </div>
     )
   }

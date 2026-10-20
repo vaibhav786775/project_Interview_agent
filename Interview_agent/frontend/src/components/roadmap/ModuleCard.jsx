@@ -1,87 +1,122 @@
-import React from 'react'
-import { useState } from 'react';
-import { AnimatePresence, motion } from "motion/react";
-import { FiBookOpen, FiChevronDown, FiChevronUp, FiClock, FiYoutube } from 'react-icons/fi';
+import React, { useState } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import {
+  FiBookOpen,
+  FiChevronDown,
+  FiChevronUp,
+  FiClock,
+  FiYoutube,
+  FiExternalLink,
+} from 'react-icons/fi'
 
-const difficultyColor = { Easy: "#34d399", Medium: "#a78bfa", Hard: "#f87171" };
-function ModuleCard({ mod, index }) {
-    const [open, setOpen] = useState(false);
+const difficultyConfig = {
+  Easy: {
+    color: '#34D399',
+    badge: 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20',
+  },
+  Medium: {
+    color: '#A78BFA',
+    badge: 'bg-violet-500/10 text-violet-300 border-violet-500/20',
+  },
+  Hard: {
+    color: '#FB7185',
+    badge: 'bg-rose-500/10 text-rose-300 border-rose-500/20',
+  },
+}
+
+export function ModuleCard({ mod, index }) {
+  const [open, setOpen] = useState(false)
+  const diff = difficultyConfig[mod.difficulty] || difficultyConfig.Medium
+
   return (
-    <motion.div 
-     initial={{ opacity: 0, y: 16 }}
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.35 }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
       whileHover={{ y: -2 }}
-      onClick={()=>setOpen(!open)}
-    className='relative overflow-hidden bg-[#000000]/90 backdrop-blur-2xl border border-white/10 rounded-xl cursor-pointer select-none shadow-[0_4px_18px_rgba(0,0,0,0.2)] hover:border-white/20 transition-all'>
-        <div className='absolute inset-0 bg-gradient-to-br from-white/[0.07] via-transparent to-transparent pointer-events-none'/>
+      onClick={() => setOpen(!open)}
+      className="relative overflow-hidden bg-[#0B1220]/80 backdrop-blur-xl border border-white/[0.08] hover:border-cyan-400/30 rounded-2xl cursor-pointer select-none shadow-[0_8px_25px_rgba(0,0,0,0.35)] transition-all"
+    >
+      {/* Specular top rim line */}
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" />
 
-        <div className='relative flex items-center gap-3 p-4'>
-            <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold bg-white/5 border border-white/10"
-          style={{ color: difficultyColor[mod.difficulty] }}>{index + 1}</div>
-
-            <div className='flex-1 min-w-0'>
-                <p className='text-sm font-medium text-white truncate'>{mod.title}</p>
-                <div className='flex items-center gap-1.5 mt-0.5'>
-                    <FiClock size={10} className="text-white/30"/>
-                    <span className='text-xs text-white/35'>{mod.duration}</span>
-                </div>
-            </div>
-
-            <div className='flex items-center gap-2'>
-                <span className="text-xs font-medium hidden sm:block" style={{ color: difficultyColor[mod.difficulty] }}>
-            {mod.difficulty}
-          </span>
-          {open
-            ? <FiChevronUp size={14} className="text-white/30" />
-            : <FiChevronDown size={14} className="text-white/30" />
-          }
-            </div>
+      {/* Module Title Bar */}
+      <div className="relative flex items-center gap-3.5 p-4 sm:p-5">
+        <div
+          className="w-9 h-9 rounded-xl flex items-center justify-center font-mono text-xs font-bold bg-[#070B14] border border-white/10 shrink-0"
+          style={{ color: diff.color }}
+        >
+          {String(index + 1).padStart(2, '0')}
         </div>
 
+        <div className="flex-1 min-w-0">
+          <p className="font-heading text-sm sm:text-base font-bold text-white truncate">
+            {mod.title}
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <FiClock size={11} className="text-slate-500" />
+            <span className="font-mono text-xs text-slate-400">{mod.duration}</span>
+          </div>
+        </div>
 
-        <AnimatePresence>
-            {open && (
-                <motion.div
-                initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
+        <div className="flex items-center gap-2.5">
+          <span className={`font-mono text-[10px] px-2.5 py-0.5 rounded-full border hidden sm:inline-block ${diff.badge}`}>
+            {mod.difficulty}
+          </span>
+          <div className="w-7 h-7 rounded-lg border border-white/10 bg-white/[0.04] flex items-center justify-center text-slate-400">
+            {open ? <FiChevronUp size={14} /> : <FiChevronDown size={14} />}
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded Module Details */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.22 }}
-                 className='overflow-hidden'>
-                    <div className='relative px-4 pb-4 pt-0 border-t border-white/8'>
-                    
-                    <p className='text-xs text-white/45 mt-3 mb-3 leading-relaxed'>{mod.description}</p>
-                    <div className='flex gap-2 flex-wrap'>
+            className="overflow-hidden bg-[#070B14]/80 border-t border-white/[0.06]"
+          >
+            <div className="p-4 sm:p-5 pt-3">
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4 font-sans">
+                {mod.description}
+              </p>
 
-                        <a href={mod.youtube} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <motion.button 
-                            whileHover={{ scale: 1.03 }} 
-                            whileTap={{ scale: 0.97 }}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-red-500/25 text-red-400 bg-red-500/10 hover:bg-red-500/20 transition-colors">
-                        <FiYoutube size={12}/> Watch Tutorial
+              <div className="flex items-center gap-2.5 flex-wrap">
+                {mod.youtube && (
+                  <a
+                    href={mod.youtube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-2 text-xs font-mono px-3.5 py-2 rounded-xl border border-rose-500/30 text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 hover:border-rose-500/50 transition-all shadow-sm"
+                  >
+                    <FiYoutube size={14} className="text-rose-400" />
+                    <span>Watch Ranked Tutorial</span>
+                    <FiExternalLink size={11} className="opacity-70" />
+                  </a>
+                )}
 
-                            </motion.button>
-
-                        </a>
-
-                        <a href={mod.article} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
-                            <motion.button 
-                            whileHover={{ scale: 1.03 }} 
-                            whileTap={{ scale: 0.97 }}
-                    className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border  border-white/10 text-white/45 bg-white/5 hover:bg-white/10 transition-colors">
-                        <FiBookOpen size={12}/> Read Article
-
-                            </motion.button>
-
-                        </a>
-                    </div>
-                    
-                    </div>
-
-                </motion.div>
-            )}
-        </AnimatePresence>
-      
+                {mod.article && (
+                  <a
+                    href={mod.article}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="inline-flex items-center gap-2 text-xs font-mono px-3.5 py-2 rounded-xl border border-cyan-500/30 text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 hover:border-cyan-400/50 transition-all shadow-sm"
+                  >
+                    <FiBookOpen size={14} className="text-cyan-400" />
+                    <span>Official Documentation</span>
+                    <FiExternalLink size={11} className="opacity-70" />
+                  </a>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </motion.div>
   )
 }

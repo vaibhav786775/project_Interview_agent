@@ -1,204 +1,171 @@
-import React from 'react'
-import { motion } from "motion/react"
-import { useState } from 'react'
-import { FiMenu, FiX } from 'react-icons/fi'
+import React, { useState } from 'react'
+import { FiArrowLeft, FiShield } from 'react-icons/fi'
 import { GiTwoCoins } from 'react-icons/gi'
+import { useNavigate } from 'react-router-dom'
 import PricingCard from '../components/PricingCard'
 import api from '../utils/axios'
-import { useNavigate } from 'react-router-dom'
+import { Badge } from '../components/ui/Badge'
+import CosmicBackground from '../components/ui/CosmicBackground'
 
 const plan = [
-    {
-        title: "Free",
-        price: "Free",
-        coins: 150,
-        button: "Claimed Coins",
-        popular: false,
-        disabled: true,
-        features: [
-            "150 Interview Coins",
-            "Resume Builder",
-            "Resume Scorer",
-            "Roadmap Generator",
-        ],
-    },
-    {
-        title: "Starter",
-        price: "199",
-        coins: 300,
-        button: "Buy Now",
-        popular: true,
-        disabled: false,
-        features: [
-            "300 Interview Coins",
-            "Unlimited Resume Score",
-            "Unlimited Roadmaps",
-            "Priority AI Response",
-        ],
-    },
-];
-function Billing({ user, setUser }) {
-    const [showMenu, setShowMenu] = useState(false)
+  {
+    title: 'Free',
+    price: 'Free',
+    coins: 150,
+    button: 'Starter Allocation Claimed',
+    popular: false,
+    disabled: true,
+    features: [
+      '150 Complimentary Coins',
+      'AI Resume Builder Access',
+      'ATS Resume Scorer Audits',
+      'Career Roadmap Generator',
+    ],
+  },
+  {
+    title: 'Starter',
+    price: '199',
+    coins: 300,
+    button: 'Recharge Now (₹199)',
+    popular: true,
+    disabled: false,
+    features: [
+      '300 Interview Coins (+6 Simulations)',
+      'Unlimited ATS Resume Scans',
+      'Unlimited Career Roadmaps',
+      'Fast ChatGroq LLM Generation',
+    ],
+  },
+]
 
-    const navigate = useNavigate()
-    const handlePayment = async (plan) => {
-        if (plan.disabled) return;
-        try {
-            const result = await api.post("/api/billing/create",
-                { planId: plan.title.toLowerCase() })
+export function Billing({ user, setUser }) {
+  const navigate = useNavigate()
+  const [loading, setLoading] = useState(false)
 
-            const options = {
-                key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-                amount: result.data.order.amount,
-                currency: result.data.order.currency,
-                name: "FresherAI",
-                description: `${plan.title} - ${plan.coins} Interview Coins`,
-                order_id: result.data.order.id,
+  const handlePayment = async (selectedPlan) => {
+    if (selectedPlan.disabled) return
+    try {
+      setLoading(true)
+      const result = await api.post('/api/billing/create', {
+        planId: selectedPlan.title.toLowerCase(),
+      })
 
-                handler: async function (response) {
-                    try {
-                        await api.post("/api/billing/verify", response)
+      const options = {
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID,
+        amount: result.data.order.amount,
+        currency: result.data.order.currency,
+        name: 'FresherAI',
+        description: `${selectedPlan.title} - ${selectedPlan.coins} Interview Coins`,
+        order_id: result.data.order.id,
 
-                        const coinRes = await api.post("/api/auth/add-coins", { coins: plan.coins })
+        handler: async function (response) {
+          try {
+            await api.post('/api/billing/verify', response)
 
-                        setUser((prev) => ({
-                            ...prev, interviewCoin: coinRes.data.interviewCoin
-                        }))
+            const coinRes = await api.post('/api/auth/add-coins', {
+              coins: selectedPlan.coins,
+            })
 
-                        alert("Payment Successful 🎉")
-                        navigate("/dashboard")
+            setUser((prev) => ({
+              ...prev,
+              interviewCoin: coinRes.data.interviewCoin,
+            }))
 
-                    } catch (error) {
-                        console.log(error);
+            alert('Payment Verified & Coins Credited Successfully! 🎉')
+            navigate('/dashboard')
+          } catch (error) {
+            console.error('Payment verification failed:', error)
+            alert(
+              error?.response?.data?.message ||
+                'Payment verification failed. Please contact support.'
+            )
+          } finally {
+            setLoading(false)
+          }
+        },
+      }
 
-                        alert(
-                            error?.response?.data?.message ||
-                            "Payment verification failed"
-                        );
-                    }
-
-                },
-
-
-                theme: {
-                    color: "#000000",
-                },
-
-            }
-
-
-            const razorpay = new window.Razorpay(options);
-            razorpay.open()
-
-
-        } catch (error) {
-            console.log(error)
-        }
+      const rzp = new window.Razorpay(options)
+      rzp.on('payment.failed', function (resp) {
+        setLoading(false)
+        alert(resp.error?.description || 'Payment cancelled or failed.')
+      })
+      rzp.open()
+    } catch (error) {
+      console.error(error)
+      setLoading(false)
+      alert(error?.response?.data?.message || 'Failed to initialize payment gateway order.')
     }
-    return (
-        <div className='min-h-screen bg-white text-[#0A0A0A]'>
-            <motion.nav
-                initial={{ y: -60, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className='sticky top-0 z-20 border-b border-black/8 bg-white/80 backdrop-blur-xl'>
-                <div className='mx-auto flex h-12 max-w-7xl items-center justify-between px-3 sm:px-5'>
-                    <div onClick={() => navigate("/dashboard")}
-                        className='flex cursor-pointer items-center gap-1.5'>
-                        <span className='text-sm font-extrabold sm:text-base text-[#0A0A0A]'>FresherAI</span>
-                        <span className='hidden rounded bg-black/5 px-1.5 py-0.5 text-[10px] text-black/50 sm:block'>Interview Coins</span>
-                    </div>
+  }
 
-                    <button onClick={() => setShowMenu(!showMenu)} className='flex h-8 w-8 items-center justify-center rounded-lg border border-black/15 text-black/60 transition hover:border-black/35 hover:text-[#0A0A0A]'>
-                        {showMenu ? <FiX size={16} /> : <FiMenu size={16} />}
+  return (
+    <div className="min-h-screen bg-[#070B14] text-[#F1F5F9] font-sans flex flex-col relative selection:bg-cyan-500/20 selection:text-cyan-200">
+      <CosmicBackground />
 
+      {/* Top Header */}
+      <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#070B14]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-xs text-slate-300 transition-colors cursor-pointer"
+            >
+              <FiArrowLeft size={13} />
+              <span className="hidden sm:inline">Command Center</span>
+            </button>
+            <div className="h-4 w-px bg-white/10 hidden sm:block" />
+            <span className="font-heading font-bold text-sm sm:text-base text-white">
+              Billing & Coin Reactor
+            </span>
+          </div>
 
-                    </button>
-
-                    {showMenu && (
-                        <>
-                            <div onClick={() => setShowMenu(false)} className='fixed inset-0 z-30 bg-black/20 lg:hidden' />
-
-                            <div className='absolute right-1 top-11 z-40 w-[240px] max-w-[calc(100vw-24px)] rounded-xl overflow-hidden bg-[#000000]/90 backdrop-blur-2xl border border-white/10 p-3.5 shadow-[0_8px_32px_rgba(0,0,0,0.25)]'>
-                                <div className='absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none' />
-
-                                <div className='relative flex items-center gap-2 border-b border-white/10 pb-3'>
-
-                                    <div className='flex h-9 w-9 items-center justify-center rounded-lg bg-yellow-500/15 border border-yellow-400/20'>
-                                        <GiTwoCoins className='text-yellow-400 text-sm' />
-                                    </div>
-
-                                    <div>
-                                        <p className="text-[10px] text-white/40">
-                                            Available Coins
-                                        </p>
-                                        <h3 className='text-lg font-bold text-white'>{user?.interviewCoin}</h3>
-                                    </div>
-
-                                </div>
-
-                                <div className='relative mt-3.5 space-y-1.5'>
-                                    {[
-                                        { title: "Resume Builder", coin: "-10" },
-                                        { title: "Resume Scorer", coin: "-10" },
-                                        { title: "Roadmap Generator", coin: "-20" },
-                                        { title: "AI Interview", coin: "-50" },
-                                    ].map((item) => (
-                                        <div key={item.title} className='flex items-center justify-between rounded-lg bg-white/5 border border-white/8 px-2.5 py-1.5'>
-                                            <span className="text-xs text-white/70">
-                                                {item.title}
-                                            </span>
-                                            <span className="text-xs font-bold text-red-400">
-                                                {item.coin}
-                                            </span>
-
-                                        </div>
-                                    ))}
-
-                                </div>
-
-                                <div className='relative mt-3.5 rounded-lg border border-violet-400/20 bg-violet-500/10 p-2.5'>
-                                    <p className="text-[10px] leading-4 text-violet-300">
-                                        Every AI feature uses Interview Coins.
-                                        Buy more coins anytime to continue using
-                                        Resume Builder, Resume Scorer,
-                                        AI Interview and Roadmap Generator.
-                                    </p>
-
-                                </div>
-                            </div>
-
-                        </>
-                    )}
-
-                </div>
-
-            </motion.nav>
-
-            <div className='mx-auto max-w-4xl px-4 py-6'>
-
-                <div className='text-center'>
-                    <h1 className="text-3xl font-bold text-[#0A0A0A]">
-                        Interview Coins
-                    </h1>
-                    <p className="mt-2 text-sm text-black/45">
-                        Use coins for Resume Scoring, Resume Builder, AI Interviews, and Roadmap Generation.
-                    </p>
-                </div>
-
-                <div className='mt-8 grid place-items-center gap-3 md:grid-cols-2'>
-                    {plan.map((plan) => (
-                        <PricingCard key={plan.title}
-                            {...plan}
-                            onBuy={() => handlePayment(plan)} />
-                    ))
-                    }
-
-                </div>
-            </div>
-
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-cyan-500/25 bg-cyan-500/10 text-cyan-300 font-mono text-xs">
+            <GiTwoCoins size={14} />
+            <span>Balance: {user?.interviewCoin ?? 0} Coins</span>
+          </div>
         </div>
-    )
+      </header>
+
+      {/* Main Billing Showcase */}
+      <main className="flex-1 py-12 sm:py-16 px-4 relative z-10 flex flex-col items-center justify-center">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <Badge variant="cyan" size="md" dot className="mb-3">
+            TRANSPARENT RECHARGE
+          </Badge>
+          <h2 className="font-heading text-3xl sm:text-5xl font-extrabold text-white tracking-tight mb-3">
+            Fuel Your Interview Journey
+          </h2>
+          <p className="text-slate-400 text-sm sm:text-base leading-relaxed">
+            Every new candidate begins with 150 free coins. Top up your balance anytime for uninterrupted
+            access to AI simulations and resume audits.
+          </p>
+        </div>
+
+        {/* Pricing Cards Grid */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full max-w-3xl mb-12">
+          {plan.map((p) => (
+            <PricingCard
+              key={p.title}
+              title={p.title}
+              price={p.price}
+              coins={p.coins}
+              button={p.button}
+              popular={p.popular}
+              disabled={p.disabled || loading}
+              features={p.features}
+              onBuy={() => handlePayment(p)}
+            />
+          ))}
+        </div>
+
+        {/* Payment Security Assurance */}
+        <div className="flex items-center justify-center gap-2 text-xs font-mono text-slate-500">
+          <FiShield className="text-cyan-400" size={14} />
+          <span>Encrypted Razorpay Checkout • Instant Balance Sync • 100% Secure</span>
+        </div>
+      </main>
+    </div>
+  )
 }
 
 export default Billing

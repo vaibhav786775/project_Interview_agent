@@ -1,353 +1,366 @@
-import React from 'react'
-import { AnimatePresence, motion } from "motion/react"
-import { FiCheck, FiChevronDown, FiClock, FiFileText, FiSend, FiX, FiZap } from 'react-icons/fi'
+import React, { useState, useEffect } from 'react'
+import { AnimatePresence, motion } from 'motion/react'
+import {
+  FiChevronDown,
+  FiClock,
+  FiFileText,
+  FiSend,
+  FiX,
+  FiArrowLeft,
+} from 'react-icons/fi'
+import { BsRocketTakeoff } from 'react-icons/bs'
+import { GiTwoCoins } from 'react-icons/gi'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { BsRocketTakeoff } from "react-icons/bs";
-import { useCoins } from '../apis/user.api'
-import api from '../utils/axios'
 import { useSelector } from 'react-redux'
-import { useEffect } from 'react'
+import { deductCoins } from '../apis/user.api'
+import api from '../utils/axios'
 import RoadmapResult from '../components/roadmap/RoadmapResult'
-const PACKAGE_OPTIONS = ["10 LPA", "15 LPA", "20 LPA", "30 LPA", "40 LPA"];
-function Roadmap({ user, setUser }) {
-    const navigate = useNavigate()
-    const [historyOpen, setHistoryOpen] = useState(false);
-    const [roadmap, setRoadmap] = useState(null);
-    const [role, setRole] = useState("");
-    const [targetPackage, setTargetPackage] = useState(PACKAGE_OPTIONS[2]); // default "20 LPA"
-    const [packageOpen, setPackageOpen] = useState(false);
-    const [useResume, setUseResume] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [historyLoading, setHistoryLoading] = useState(false);
-    const [history, setHistory] = useState([]);
-    const [error, setError] = useState("");
+import { Button } from '../components/ui/Button'
+import { Badge } from '../components/ui/Badge'
+import CosmicBackground from '../components/ui/CosmicBackground'
 
-    const { resume } = useSelector((state) => state.resume)
+const PACKAGE_OPTIONS = ['10 LPA', '15 LPA', '20 LPA', '30 LPA', '40 LPA']
 
+export function Roadmap({ user, setUser }) {
+  const navigate = useNavigate()
+  const [historyOpen, setHistoryOpen] = useState(false)
+  const [roadmap, setRoadmap] = useState(null)
+  const [role, setRole] = useState('')
+  const [targetPackage, setTargetPackage] = useState(PACKAGE_OPTIONS[2]) // default "20 LPA"
+  const [packageOpen, setPackageOpen] = useState(false)
+  const [useResume, setUseResume] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [history, setHistory] = useState([])
+  const [error, setError] = useState('')
 
-    useEffect(() => {
+  const { resume } = useSelector((state) => state.resume)
 
-        getAllRoadmaps()
-    }, [])
-
-    const getAllRoadmaps = async () => {
-            setHistoryLoading(true)
-            try {
-                const response = await api.get("/api/roadmap/all")
-                console.log(response.data)
-                setHistory(response.data.data)
-                setHistoryLoading(false)
-            } catch (error) {
-                console.log(error)
-                setHistoryLoading(false)
-            }
-        }
-
-
-    const getRoadmapById = async (id) => {
-        try {
-            const response = await api.get(`/api/roadmap/${id}`)
-            console.log(response.data)
-            setRoadmap(response.data.data)
-        } catch (error) {
-            console.log(error)
-        }
+  const getAllRoadmaps = async () => {
+    setHistoryLoading(true)
+    try {
+      const response = await api.get('/api/roadmap/all')
+      if (response?.data?.data) {
+        setHistory(response.data.data)
+      }
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setHistoryLoading(false)
     }
+  }
 
+  useEffect(() => {
+    getAllRoadmaps()
+  }, [])
 
-    const handleGenerate = async () => {
-        if (!role.trim() || loading) return;
-        setLoading(true);
-        setError("");
-        try {
-            try {
-                const coinResponse = await useCoins({ coins: 20, action: "roadmap-builder" })
-                setUser((prev) => ({
-                    ...prev, interviewCoin: coinResponse?.interviewCoin,
-                }))
-            } catch (error) {
-                setLoading(false)
-                alert("Failed to use coins.")
-                return;
-            }
-
-            const response = await api.post("/api/roadmap/generate", {
-                role: role.trim(),
-                targetPackage,
-                useResume,
-                resume
-            })
-            setRoadmap(response.data.data)
-getAllRoadmaps()
-            setLoading(false)
-
-        } catch (error) {
-            console.error("Failed to generate roadmap:", error);
-            setError("Something went wrong while generating your roadmap. Please try again.");
-            setLoading(false)
-
-        }
+  const getRoadmapById = async (id) => {
+    try {
+      const response = await api.get(`/api/roadmap/${id}`)
+      if (response?.data?.data) {
+        setRoadmap(response.data.data)
+        setHistoryOpen(false)
+      }
+    } catch (err) {
+      console.error(err)
     }
+  }
 
+  const handleGenerate = async () => {
+    if (!role.trim() || loading) return
+    setLoading(true)
+    setError('')
+    try {
+      try {
+        const coinResponse = await deductCoins({ coins: 20, action: 'roadmap-builder' })
+        setUser((prev) => ({
+          ...prev,
+          interviewCoin: coinResponse?.interviewCoin,
+        }))
+      } catch (_coinErr) {
+        setLoading(false)
+        setError('Insufficient coins (20 required to generate a roadmap).')
+        return
+      }
 
-    return (
-        <div className='min-h-screen bg-white text-[#0A0A0A] flex flex-col'>
-            <motion.nav
-                initial={{ y: -60, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-                className='sticky top-0 z-20 border-b border-black/8 bg-white/80 backdrop-blur-xl'>
-                <div className='mx-auto flex h-12 max-w-7xl items-center justify-between px-3 sm:px-5'>
-                    <div onClick={() => navigate("/dashboard")}
-                        className='flex cursor-pointer items-center gap-1.5'>
-                        <span className='text-sm font-extrabold sm:text-base text-[#0A0A0A]'>FresherAI</span>
-                        <span className='hidden rounded bg-black/5 px-1.5 py-0.5 text-[10px] text-black/50 sm:block'>Roadmap Builder</span>
-                    </div>
+      const response = await api.post('/api/roadmap/generate', {
+        role: role.trim(),
+        targetPackage,
+        useResume,
+        resume,
+      })
+      setRoadmap(response.data.data)
+      getAllRoadmaps()
+    } catch (err) {
+      console.error('Failed to generate roadmap:', err)
+      setError('Something went wrong while generating your roadmap. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
 
-                    <button onClick={() => setHistoryOpen(!historyOpen)} className='flex h-8 items-center justify-center gap-1  rounded-lg border border-black/15 text-black/60 transition px-2 hover:border-[#0A0A0A] hover:text-[#0A0A0A] text-[10px]'>
-                        <FiClock />
-                        <span className="hidden sm:inline">History</span>
-                    </button>
+  return (
+    <div className="min-h-screen bg-[#070B14] text-[#F1F5F9] font-sans flex flex-col relative selection:bg-cyan-500/20 selection:text-cyan-200">
+      <CosmicBackground />
 
-                </div>
+      {/* Top Header */}
+      <header className="sticky top-0 z-30 border-b border-white/[0.08] bg-[#070B14]/85 backdrop-blur-xl">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate('/dashboard')}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-xs text-slate-300 transition-colors cursor-pointer"
+            >
+              <FiArrowLeft size={13} />
+              <span className="hidden sm:inline">Command Center</span>
+            </button>
+            <div className="h-4 w-px bg-white/10 hidden sm:block" />
+            <div className="flex items-center gap-2">
+              <span className="font-heading font-bold text-sm sm:text-base text-white">
+                Skill Trajectory Engine
+              </span>
+              <Badge variant="cyan" size="sm" dot>
+                YOUTUBE + DOCS
+              </Badge>
+            </div>
+          </div>
 
-            </motion.nav>
-
-            <main className='flex-1 overflow-y-auto pb-28 sm:pb-32 pt-16 sm:pt-20'>
-                <div className='max-w-3xl mx-auto px-3 sm:px-4 pt-5 sm:pt-6'>
-                    <AnimatePresence mode='wait'>
-                        {!roadmap ? (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.97 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.97 }}
-                                transition={{ duration: 0.4 }}
-                                className='flex flex-col items-center justify-center min-h-[60vh] text-center px-2 sm:px-4'>
-                                <div className='text-4xl sm:text-5xl mb-4 sm:mb-5'>
-                                    <BsRocketTakeoff className='text-gray-700' />
-
-                                </div>
-
-                                <h3 className='text-xl sm:text-2xl font-bold text-[#0A0A0A] mb-2'>AI Roadmap Generator</h3>
-
-                                <p className='text-black/45 text-sm max-w-xs sm:max-w-md mb-1'> Generate a personalised roadmap for your dream job.</p>
-
-                                <p className='text-black/35 text-xs sm:text-sm max-w-xs sm:max-w-md'>
-                                    Choose a role and let AI build a complete learning path.
-                                </p>
-
-                                {error && <p className="mt-4 text-xs text-red-500 max-w-xs sm:max-w-md">{error}</p>}
-
-                                <div className='mt-6 sm:mt-8 grid grid-cols-3 gap-2 sm:gap-3 w-full max-w-xs sm:max-w-sm'>
-                                    {
-                                        ["Frontend Dev", "Backend Eng", "ML Engineer"].map((r) => (
-                                            <motion.button
-                                                key={r}
-                                                onClick={() => setRole(r)}
-                                                whileHover={{ y: -2 }}
-                                                whileTap={{ scale: 0.97 }}
-                                                className='relative overflow-hidden text-xs py-2 sm:py-2.5 px-2 sm:px-3 rounded-xl bg-[#000000]/90 backdrop-blur-2xl border border-white/10 text-white/55 hover:text-white hover:border-white/25 shadow-[0_4px_14px_rgba(0,0,0,0.18)] transition-all'>
-                                                <div className='absolute inset-0 bg-gradient-to-br from-white/[0.07] via-transparent to-transparent pointer-events-none' />
-                                                <span className='relative'>{r}</span>
-
-                                            </motion.button>
-                                        ))
-                                    }
-                                </div>
-
-                            </motion.div>
-                        ) : (
-                            <RoadmapResult
-                            roadmap={roadmap}
-                            onClear={()=>setRoadmap(null)}
-                            
-                            />
-
-                        )}
-
-
-                    </AnimatePresence>
-                </div>
-
-            </main>
-
-            <div className='fixed bottom-0 left-0 right-0 z-30 pb-3 sm:pb-4 pt-3 px-3 sm:px-4 bg-gradient-to-t from-white via-white/95 to-transparent'>
-                <div className='max-w-3xl mx-auto'>
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className='relative overflow-visible flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-xl sm:rounded-2xl bg-[#000000]/90 backdrop-blur-2xl border border-white/10 shadow-[0_8px_32px_rgba(0,0,0,0.25)]'>
-
-                        <input
-                            type='text'
-                            placeholder='Backend Developer'
-                            onChange={(e) => setRole(e.target.value)}
-                            value={role}
-                            className='relative flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-white placeholder-white/30 outline-none px-2 py-1.5' />
-
-                        <div className='relative'>
-                            <motion.button
-                                type='button'
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.97 }}
-                                onClick={() => setPackageOpen(!packageOpen)}
-                                className='relative flex items-center gap-1 text-xs px-2.5 py-2 rounded-xl border border-white/10 text-white/60 hover:text-white/90 hover:border-white/20 transition-all whitespace-nowrap bg-white/5'>
-                                {targetPackage}
-                                <FiChevronDown size={11} className={`transition-transform ${packageOpen ? "rotate-180" : ""}`} />
-
-
-                            </motion.button>
-
-                            <AnimatePresence>
-                                {packageOpen && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: 6, scale: 0.97 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: 6, scale: 0.97 }}
-                                        transition={{ duration: 0.15 }}
-                                        className='absolute bottom-full mb-4 right-0 w-28 rounded-xl overflow-hidden border border-white/10 bg-[#0A0A0A] shadow-[0_8px_24px_rgba(0,0,0,0.35)] z-10 '>
-                                        {
-                                            PACKAGE_OPTIONS.map((pkg) => (
-                                                <button key={pkg}
-                                                    onClick={() => {
-                                                        setTargetPackage(pkg);
-                                                        setPackageOpen(false)
-                                                    }}
-                                                    className={`w-full text-left text-xs px-3 py-2 transition-colors ${pkg === targetPackage
-                                                        ? "bg-white/10 text-white"
-                                                        : "text-white/55 hover:bg-white/5 hover:text-white/90"
-                                                        }`}>
-                                                    {pkg}
-
-                                                </button>
-                                            ))
-                                        }
-
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-
-                        <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            type='button'
-                            onClick={() => setUseResume(!useResume)}
-                            className={`flex items-center text-xs gap-1 px-2 py-2 rounded-xl ${useResume
-                                ? "bg-emerald-500/10 text-emerald-400"
-                                : "bg-white/5 text-white/60"
-                                }`}>
-                            {useResume ? (
-                                <>
-                                    <FiCheck size={12} />
-                                    Added
-                                </>
-                            ) : (
-                                <>
-                                    <FiFileText size={12} />
-                                    Resume
-                                </>
-                            )}
-
-                        </motion.button>
-
-                        <motion.button
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            disabled={loading || !role.trim()}
-                            onClick={handleGenerate}
-                            className='relative flex items-center gap-1.5 text-xs px-3 sm:px-4 py-2 rounded-xl font-semibold text-[#0A0A0A] bg-white hover:bg-white/90 shadow-[0_2px_10px_rgba(255,255,255,0.12)] transition-all disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap'>
-                            {loading ? (
-                                <>
-                                    <motion.span
-                                        animate={{ rotate: 360 }}
-                                        transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                                        className="inline-block"
-                                    >
-                                        <FiZap size={12} />
-                                    </motion.span>
-                                    <span className="hidden sm:inline">Generating…</span>
-                                </>
-                            ) : (
-                                <>
-                                    <FiSend size={12} />
-                                    <span className="hidden sm:inline">Generate</span>
-                                </>
-                            )}
-
-                        </motion.button>
-
-
-                    </motion.div>
-
-                </div>
+          <div className="flex items-center gap-3">
+            <div
+              onClick={() => navigate('/billing')}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-cyan-500/25 bg-cyan-500/10 text-cyan-300 font-mono text-xs cursor-pointer"
+            >
+              <GiTwoCoins size={14} />
+              <span>{user?.interviewCoin ?? 0} Coins</span>
             </div>
 
-            <AnimatePresence>
-                {
-                    historyOpen && (
-                        <>
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                onClick={() => setHistoryOpen(false)}
-                                className='fixed inset-0 z-40 bg-black/20 backdrop-blur-sm' />
-
-                            <motion.aside
-                                initial={{ x: 320 }}
-                                animate={{ x: 0 }}
-                                exit={{ x: 320 }}
-                                transition={{ type: "spring", stiffness: 320, damping: 32 }}
-                                className='fixed right-0 top-0 bottom-0 z-50 w-[280px] sm:w-[300px] max-w-[85vw] bg-white border-l border-black/8 flex flex-col overflow-y-auto shadow-[0_0_40px_rgba(0,0,0,0.1)]'>
-                                <div className='flex items-center justify-between px-4 py-3 sm:py-4 border-b border-black/8 sticky top-0 bg-white/90 backdrop-blur-xl'>
-                                    <span className='text-sm font-semibold text-[#0A0A0A]'>Previous Roadmaps</span>
-                                    <button onClick={() => setHistoryOpen(false)} className='text-black/35 hover:text-[#0A0A0A] transition-colors'><FiX size={16} /></button>
-                                </div>
-
-                                <div className='flex flex-col gap-2 p-3'>
-                                    {historyLoading ? (
-                                        <p className="text-xs text-black/35 text-center py-6">Loading…</p>
-                                    )
-                                        : history.length === 0 ?
-                                            (
-                                                <p className="text-xs text-black/35 text-center py-6">No roadmaps yet.</p>
-                                            ) :
-                                            (
-                                                history.map((h, i) => (
-                                                    <button key={i} onClick={()=>{
-                                                        getRoadmapById(h._id);
-                                                        setHistoryOpen(false)
-                                                    }} className='relative overflow-hidden text-left p-4 rounded-xl bg-[#000]/90 border border-white/10'>
-                                                        <h3 className='text-white font-semibold'>{h.title}</h3>
-                                                        <div className='flex justify-between items-center my-1'>
-                                                            <span className='text-violet-400 text-xs'>{h.targetPackage}</span>
-                                                            <p className='text-xs text-white/40'>{h.duration}</p>
-                                                        </div>
-
-                                                        <p className='text-xs text-white/30 mt-1'>
-                                                        {new Date(h.createdAt).toLocaleDateString()}</p>
-
-                                                    </button>
-                                                ))
-                                            )}
-                                </div>
-
-
-                            </motion.aside>
-
-                        </>
-                    )
-                }
-            </AnimatePresence>
-
-
-
-
+            <button
+              onClick={() => setHistoryOpen(!historyOpen)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] text-xs font-mono text-slate-300 transition-colors cursor-pointer"
+            >
+              <FiClock size={13} />
+              <span>History ({history.length})</span>
+            </button>
+          </div>
         </div>
-    )
+      </header>
+
+      {/* Main Viewport */}
+      <main className="flex-1 overflow-y-auto pb-36 pt-8 px-4 sm:px-6 relative z-10">
+        <div className="max-w-4xl mx-auto">
+          <AnimatePresence mode="wait">
+            {!roadmap ? (
+              /* Empty Initial View */
+              <motion.div
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.97 }}
+                transition={{ duration: 0.35 }}
+                className="flex flex-col items-center justify-center min-h-[55vh] text-center px-4"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-cyan-400/30 flex items-center justify-center text-cyan-300 mb-5 shadow-[0_0_25px_rgba(103,232,249,0.2)]">
+                  <BsRocketTakeoff size={30} />
+                </div>
+
+                <Badge variant="cyan" size="sm" dot className="mb-3">
+                  AI CAREER TRAJECTORY
+                </Badge>
+
+                <h2 className="font-heading text-2xl sm:text-4xl font-extrabold text-white tracking-tight mb-2">
+                  Generate Your Career Roadmap
+                </h2>
+
+                <p className="text-slate-400 text-sm max-w-md mx-auto mb-1 leading-relaxed">
+                  Enter your target role and salary tier. AI will synthesize a complete curriculum with
+                  verified documentation and top-rated YouTube tutorials.
+                </p>
+                <p className="font-mono text-xs text-cyan-400/80 mb-6">Cost: 20 Interview Coins</p>
+
+                {error && (
+                  <div className="mb-5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
+                    {error}
+                  </div>
+                )}
+
+                {/* Quick Role Suggestions */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 w-full max-w-lg">
+                  {['Frontend Developer', 'Backend Engineer', 'DevOps Specialist', 'AI Engineer'].map(
+                    (r) => (
+                      <button
+                        key={r}
+                        onClick={() => setRole(r)}
+                        className="p-3 rounded-xl bg-[#0B1220]/80 hover:bg-[#111A2B] border border-white/10 hover:border-cyan-400/40 text-xs font-mono text-slate-300 hover:text-white transition-all cursor-pointer shadow-md text-center"
+                      >
+                        {r}
+                      </button>
+                    )
+                  )}
+                </div>
+              </motion.div>
+            ) : (
+              /* Populated Roadmap Result View */
+              <RoadmapResult roadmap={roadmap} onClear={() => setRoadmap(null)} />
+            )}
+          </AnimatePresence>
+        </div>
+      </main>
+
+      {/* Floating Bottom Command Dock */}
+      <div className="fixed bottom-0 inset-x-0 z-30 pb-4 pt-3 px-4 bg-gradient-to-t from-[#070B14] via-[#070B14]/95 to-transparent">
+        <div className="max-w-3xl mx-auto">
+          <div className="rounded-2xl bg-[#0B1220]/90 backdrop-blur-2xl border border-white/[0.12] p-3 sm:p-3.5 shadow-[0_10px_40px_rgba(0,0,0,0.8),0_0_20px_rgba(103,232,249,0.1)] flex flex-col sm:flex-row items-center gap-3">
+            {/* Role Input Field */}
+            <div className="relative flex-1 w-full">
+              <input
+                type="text"
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                placeholder="Target Job Role (e.g. Backend Engineer)..."
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleGenerate()
+                }}
+                className="w-full bg-[#070B14] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-cyan-400/50 focus:ring-1 focus:ring-cyan-500/20 font-sans"
+              />
+            </div>
+
+            {/* Compensation Benchmark Dropdown */}
+            <div className="relative shrink-0 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => setPackageOpen(!packageOpen)}
+                className="w-full sm:w-auto flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-white/10 bg-[#070B14] text-xs font-mono text-slate-200 hover:border-white/20 transition-all cursor-pointer"
+              >
+                <span>{targetPackage}</span>
+                <FiChevronDown size={13} className="text-slate-400" />
+              </button>
+
+              <AnimatePresence>
+                {packageOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="absolute bottom-full mb-2 left-0 w-full sm:w-36 rounded-xl bg-[#0B1220] border border-white/10 shadow-2xl p-1 z-50 font-mono text-xs space-y-0.5"
+                  >
+                    {PACKAGE_OPTIONS.map((pkg) => (
+                      <button
+                        key={pkg}
+                        onClick={() => {
+                          setTargetPackage(pkg)
+                          setPackageOpen(false)
+                        }}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors cursor-pointer ${
+                          targetPackage === pkg
+                            ? 'bg-cyan-500/20 text-cyan-300 font-bold'
+                            : 'text-slate-300 hover:bg-white/[0.06]'
+                        }`}
+                      >
+                        {pkg}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            {/* Resume Attachment Toggle */}
+            {resume && (
+              <button
+                type="button"
+                onClick={() => setUseResume(!useResume)}
+                className={`flex items-center gap-1.5 px-3 py-2.5 rounded-xl border text-xs font-mono transition-all cursor-pointer shrink-0 ${
+                  useResume
+                    ? 'bg-cyan-500/15 border-cyan-400/35 text-cyan-300'
+                    : 'bg-[#070B14] border-white/10 text-slate-400 hover:text-white'
+                }`}
+                title="Personalize roadmap with parsed resume gaps"
+              >
+                <FiFileText size={13} />
+                <span className="hidden sm:inline">Use Resume</span>
+              </button>
+            )}
+
+            {/* Submit Action */}
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleGenerate}
+              disabled={!role.trim() || loading}
+              loading={loading}
+              icon={FiSend}
+              className="w-full sm:w-auto shrink-0"
+            >
+              {loading ? 'Synthesizing...' : 'Generate (20 Coins)'}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Slide-over Roadmap History Drawer */}
+      <AnimatePresence>
+        {historyOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setHistoryOpen(false)}
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.aside
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="fixed top-0 right-0 h-screen w-full max-w-sm bg-[#0B1220]/95 backdrop-blur-2xl border-l border-white/10 z-50 flex flex-col p-6 shadow-2xl"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-4">
+                <div className="flex items-center gap-2">
+                  <FiClock className="text-cyan-400" size={16} />
+                  <h3 className="font-heading font-bold text-base text-white">Roadmap Archives</h3>
+                </div>
+                <button
+                  onClick={() => setHistoryOpen(false)}
+                  className="w-8 h-8 rounded-lg border border-white/10 bg-white/[0.04] flex items-center justify-center text-slate-400 hover:text-white cursor-pointer"
+                >
+                  <FiX size={16} />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+                {historyLoading ? (
+                  <p className="text-xs text-slate-500 font-mono text-center py-6">
+                    Loading history...
+                  </p>
+                ) : history.length === 0 ? (
+                  <p className="text-xs text-slate-500 font-mono text-center py-6">
+                    No roadmap archives recorded.
+                  </p>
+                ) : (
+                  history.map((h) => (
+                    <motion.div
+                      key={h._id}
+                      whileHover={{ y: -2 }}
+                      onClick={() => getRoadmapById(h._id)}
+                      className="p-3.5 rounded-xl bg-[#070B14] border border-white/[0.08] hover:border-cyan-400/35 transition-all cursor-pointer"
+                    >
+                      <h4 className="font-heading font-bold text-sm text-white truncate">
+                        {h.title}
+                      </h4>
+                      <div className="flex items-center justify-between mt-1 text-xs font-mono text-slate-400">
+                        <span className="text-cyan-300">{h.targetPackage}</span>
+                        <span>{h.modules?.length || 0} modules</span>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </motion.aside>
+          </>
+        )}
+      </AnimatePresence>
+    </div>
+  )
 }
 
 export default Roadmap

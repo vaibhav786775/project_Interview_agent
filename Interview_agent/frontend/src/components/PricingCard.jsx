@@ -1,75 +1,99 @@
 import React from 'react'
+import { motion } from 'motion/react'
 import { FiCheck } from 'react-icons/fi'
 import { GiTwoCoins } from 'react-icons/gi'
+import { Button } from './ui/Button'
 
-function PricingCard({
-    title,
-    price,
-    coins,
-    button,
-    features,
-    popular,
-    disabled,
-    onBuy,
+export function PricingCard({
+  title,
+  price,
+  coins,
+  button,
+  features,
+  popular,
+  disabled,
+  onBuy,
 }) {
-    return (
-        <div className={`relative w-full max-w-[320px] rounded-2xl overflow-hidden border p-5 transition-all
-        ${popular
-          ? "border-violet-400/30 bg-[#000000]/90 backdrop-blur-2xl shadow-[0_8px_40px_rgba(124,58,237,0.2)]"
-          : "border-white/10 bg-[#000000]/90 backdrop-blur-2xl shadow-[0_8px_32px_rgba(0,0,0,0.25)]"
-        }`}>
-            <div className='absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-transparent pointer-events-none'/>
+  return (
+    <motion.div
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+      className={`relative w-full max-w-[340px] rounded-3xl overflow-hidden border p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 ${
+        popular
+          ? 'border-cyan-400/40 bg-gradient-to-b from-[#111A2B] via-[#0B1220] to-[#070B14] shadow-[0_0_50px_rgba(103,232,249,0.18)]'
+          : 'border-white/10 bg-[#0B1220]/80 backdrop-blur-xl shadow-xl'
+      }`}
+    >
+      {/* Specular top rim line */}
+      <div
+        className={`absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent ${
+          popular ? 'via-cyan-400/60' : 'via-white/15'
+        } to-transparent pointer-events-none`}
+      />
 
-            {popular && (<div className='absolute -top-8 -right-8 w-28 h-28 bg-violet-500/20 rounded-full blur-3xl pointer-events-none'/>)}
-
-            {popular && (
-                <div className='absolute right-3 top-3 rounded-full bg-violet-600 px-2 py-0.5 text-[10px] font-semibold text-white z-10'>Popular</div>
-            )}
-            
-            <h2 className='relative text-base font-bold text-white'>{title}</h2>
-
-            <div className='relative mt-2.5 flex items-end gap-1.5'>
-                <span className='text-3xl font-extrabold text-white'>{price}</span>
-                {price !== "Free" && (
-                   <span className='pb-1 text-xs text-white/40'>
-                    INR
-
-                   </span>
-
-                )}
-            </div>
-
-            <div className='relative mt-3.5 flex items-center gap-1.5 rounded-lg bg-white/5 border border-white/8 p-2.5'>
-            <GiTwoCoins className="text-yellow-400" size={14}/>
-            <span className='text-sm font-semibold text-white'>
-                {coins} Interview Coins
-
-            </span>
-            </div>
-
-            <div className='relative mt-3.5 space-y-1.5'>
-                {features.map((f)=>(
-                    <div key={f} className='flex items-center gap-2 text-xs text-white/60'>
-                        <FiCheck className="text-green-400 shrink-0" size={13} />
-                        <span>{f}</span>
-                    </div>
-                ))}
-            </div>
-
-            <button disabled={disabled}
-            onClick={onBuy}
-             className={`relative mt-5 w-full rounded-lg py-2 text-sm font-semibold transition
-    ${
-      disabled
-        ? "cursor-not-allowed bg-gray-700 text-gray-400"
-        : popular
-        ? "bg-violet-600 hover:bg-violet-700 text-white shadow-[0_4px_14px_rgba(124,58,237,0.35)]"
-        : "bg-white/8 border border-white/15 text-white hover:border-white/30 hover:bg-white/12"
-    }`}>
-        {button}
-    </button>
+      {popular && (
+        <div className="absolute top-4 right-4">
+          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-cyan-300 bg-cyan-400/15 border border-cyan-400/30 px-2.5 py-0.5 rounded-full shadow-[0_0_12px_rgba(103,232,249,0.25)]">
+            RECOMMENDED
+          </span>
         </div>
-    )
+      )}
+
+      <div>
+        <span className="font-mono text-xs uppercase tracking-widest text-slate-400 block mb-1">
+          {title} Package
+        </span>
+        <h3 className="font-heading text-2xl font-bold text-white tracking-tight">{title}</h3>
+
+        <div className="mt-4 flex items-baseline gap-1.5">
+          {price === 'Free' ? (
+            <span className="font-mono text-4xl font-extrabold text-white">Free</span>
+          ) : (
+            <>
+              <span className="font-mono text-xs text-slate-400">₹</span>
+              <span className="font-mono text-4xl font-extrabold text-white">{price}</span>
+              <span className="font-mono text-xs text-slate-400">INR</span>
+            </>
+          )}
+        </div>
+
+        {/* Coins Chip */}
+        <div className="mt-4 flex items-center gap-2 rounded-xl bg-[#070B14] border border-white/10 p-3">
+          <div className="w-7 h-7 rounded-lg bg-cyan-500/15 border border-cyan-400/30 flex items-center justify-center text-cyan-300">
+            <GiTwoCoins size={16} />
+          </div>
+          <div>
+            <span className="font-mono text-sm font-bold text-white">{coins} Coins</span>
+            <span className="block text-[10px] font-mono text-slate-400">Credited to Balance</span>
+          </div>
+        </div>
+
+        {/* Feature Checkpoints */}
+        <div className="mt-6 space-y-2.5">
+          {features?.map((f, i) => (
+            <div key={i} className="flex items-center gap-2.5 text-xs text-slate-300">
+              <div className="w-4 h-4 rounded-full bg-emerald-500/20 border border-emerald-400/30 flex items-center justify-center text-emerald-400 shrink-0">
+                <FiCheck size={11} />
+              </div>
+              <span>{f}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8 pt-5 border-t border-white/[0.08]">
+        <Button
+          variant={popular ? 'primary' : 'secondary'}
+          size="md"
+          onClick={onBuy}
+          disabled={disabled}
+          className="w-full text-sm font-semibold"
+        >
+          {button}
+        </Button>
+      </div>
+    </motion.div>
+  )
 }
 
 export default PricingCard
